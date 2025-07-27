@@ -1,0 +1,98 @@
+// ==UserScript==
+// @name         Wormate.io AFK Preventer
+// @namespace    http://tampermonkey.net/
+// @version      1.0
+// @description  حركة دائرية صغيرة لمنع الخمول في Wormate.io ومواقع الديدان الأخرى
+// @author       You
+// @match        *://wormate.io/*
+// @match        *://*.wormate.io/*
+// @match        *://wormworldconnect.com/*
+// @match        *://*.wormworldconnect.com/*
+// @match        *://wormatefriendsconnect.com/*
+// @match        *://*.wormatefriendsconnect.com/*
+// @match        *://timmap.com/*
+// @match        *://*.timmap.com/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // إعدادات الحركة
+    let radius = 5;
+    let angle = 0;
+    let toggle = false;
+    let interval;
+
+    // إنشاء زر التحكم
+    let button = document.createElement('button');
+    button.textContent = '⛔ AFK';
+    button.style.position = 'fixed';
+    button.style.bottom = '20px';
+    button.style.right = '20px';
+    button.style.zIndex = '9999';
+    button.style.padding = '10px';
+    button.style.fontSize = '16px';
+    button.style.backgroundColor = '#f44336';
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '5px';
+    button.style.cursor = 'pointer';
+    document.body.appendChild(button);
+
+    // دالة لتحريك المؤشر
+    function moveMouse() {
+        // الحصول على آخر موضع معروف للماوس
+        // سنخزن الموضع في متغيرات، لكن إذا لم يكن هناك حدث ماوس بعد، لنفعل شيئاً
+        if (typeof window.lastMouseX === 'undefined' || typeof window.lastMouseY === 'undefined') {
+            return;
+        }
+
+        // تحديث الزاوية
+        angle = (angle + 10) % 360;
+        const rad = angle * Math.PI / 180;
+
+        // حساب الإزاحة
+        const offsetX = radius * Math.cos(rad);
+        const offsetY = radius * Math.sin(rad);
+
+        // الإحداثيات الجديدة
+        const newX = window.lastMouseX + offsetX;
+        const newY = window.lastMouseY + offsetY;
+
+        // إنشاء حدث حركة ماوس
+        const event = new MouseEvent('mousemove', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: newX,
+            clientY: newY
+        });
+
+        // إرسال الحدث إلى العنصر الذي كان تحته الماوس (أو document)
+        document.elementFromPoint(newX, newY).dispatchEvent(event);
+    }
+
+    // تتبع حركة الماوس لتخزين الموضع الأخير
+    document.addEventListener('mousemove', function(e) {
+        window.lastMouseX = e.clientX;
+        window.lastMouseY = e.clientY;
+    });
+
+    // عند النقر على الزر
+    button.addEventListener('click', function() {
+        toggle = !toggle;
+
+        if (toggle) {
+            button.textContent = '✅ AFK';
+            button.style.backgroundColor = '#4CAF50';
+            // بدء المؤقت
+            interval = setInterval(moveMouse, 300);
+        } else {
+            button.textContent = '⛔ AFK';
+            button.style.backgroundColor = '#f44336';
+            // إيقاف المؤقت
+            clearInterval(interval);
+        }
+    });
+})();
